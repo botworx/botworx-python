@@ -1,23 +1,19 @@
-'''
-'''
 import sys
 import os
 
-import unittest
+sys.path.append('../../')
+
 import pprint
 import json
 import itertools
 
-from botworx.data import load
 from botworx.compile.lex.lexer import Lexer
 from botworx.compile.parse.parser import Parser
 from botworx.compile.ast.node import AstEncoder
 from botworx.compile.compiler import Compiler
-#
     
-def main():
-    filename = 'turtles.mia'
-    with load(filename) as fh:
+def compile(filename):
+    with open(filename, "r") as fh:
         s = fh.read()
 
     print('##start##')
@@ -28,7 +24,7 @@ def main():
     tokens = lexer.tokenize(s)
     tokens, tokens2 = itertools.tee(tokens)
     for tok in tokens2:
-        print(tok)
+        print(tok)    #
     
     parser = Parser()
     #ast = parser.parse(s, debug=1)
@@ -41,6 +37,7 @@ def main():
     compiler = Compiler()
     compiler.compile(ast)
         
-        
+'''
 if __name__ == '__main__':
-    main()
+    compile()
+'''

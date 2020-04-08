@@ -1,4 +1,4 @@
-import ply.lex as lex
+import sly.lex as lex
 import decimal
 from botworx.compile.lex.tokens import tokens
 

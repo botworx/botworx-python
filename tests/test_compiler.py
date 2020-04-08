@@ -1,10 +1,14 @@
 '''
 '''
-#import sys
-#import os
+import sys
+import os
+
+sys.path.append('../')
+
 import unittest
 import pprint
 import json
+import itertools
 
 from botworx.data import load
 from botworx.compile.lex.lexer import Lexer
@@ -15,20 +19,23 @@ from botworx.compile.compiler import Compiler
 class Test(unittest.TestCase):
     
     def test(self):
-        #f = load('blox.mia')
-        f = load('hello.mia')
-        s = f.read()
+        filename = 'turtles.mia'
+        with load(filename) as fh:
+            s = fh.read()
+
         print('##start##')
         print(s)
         print('##end##')
         
         lexer = Lexer()
-        lexer.build()
-        #
-        parser = Parser(lexer)
-        parser.build()
+        tokens = lexer.tokenize(s)
+        tokens, tokens2 = itertools.tee(tokens)
+        for tok in tokens2:
+            print(tok)
+        
+        parser = Parser()
         #ast = parser.parse(s, debug=1)
-        ast = parser.parse(s)
+        ast = parser.parse(tokens)
         #print ast
         #pprint.pprint(ast)
         #json.dumps(ast)
@@ -38,4 +45,5 @@ class Test(unittest.TestCase):
         compiler.compile(ast)
         
         
-        
+if __name__ == '__main__':
+    unittest.main()

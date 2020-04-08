@@ -5,7 +5,7 @@
 
 #from botworx.test.test_lexer import Test
 #from botworx.test.test_parser import Test
-from botworx.test.test_compiler import Test
+import tests.test_compiler as tc
 
-test = Test()
+test = tc.Test()
 test.test()
