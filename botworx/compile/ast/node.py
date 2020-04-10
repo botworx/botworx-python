@@ -15,6 +15,7 @@ BODY = "BODY"
 FLAVOR = "FLAVOR"
 BINDING = "BINDING"
 VALUE = "VALUE"
+ARG = "ARG"
 
 _terms = {}
 _types = {}
@@ -289,8 +290,8 @@ class UnaryExpr(Node):
         super().__init__(kind)
         self.arg = arg
 
-    def toJSON():
-        return {KIND: self.kind, arg: self.arg}
+    def toJSON(self):
+        return {KIND: self.kind, ARG: self.arg}
 
 
 class PrefixExpr(UnaryExpr):
@@ -317,8 +318,8 @@ class Message(PrefixExpr):
             if not clause.subj:
                 clause.type = type_("Achieve")
 
-    def toJSON():
-        return {KIND: self.kind, TYPE: self.type, arg: self.arg}
+    def toJSON(self):
+        return {KIND: self.kind, TYPE: self.type, ARG: self.arg}
 
 
 class Propose(Message):
@@ -417,7 +418,7 @@ class Query(Statement):
         self.lhs = lhs
         self.rhs = rhs
 
-    def toJSON():
+    def toJSON(self):
         return {KIND: self.kind, lhs: self.lhs, rhs: self.rhs}
 
 

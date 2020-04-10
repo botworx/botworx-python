@@ -1,0 +1,5 @@
+#
+# Global Variables
+#
+
+logger = None

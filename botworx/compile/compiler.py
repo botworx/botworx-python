@@ -123,9 +123,8 @@ class Compiler(CompilerBase):
     def Module(self, n):
         k, v = None, None
         self.write('''\
-miajs = require('@botworx/miajs')
-{Context, Term, Goal, Believe, Achieve, Assert, Retract, Attempt} = miajs
-{__, $_, _$, module_, Message, Rule, Trigger, Variable, runner_} = miajs\
+from botworx.run import Context, Term, Goal, Believe, Achieve, Assert, Retract, Attempt
+from botworx.run import __, term_, _$, module_, Message, Rule, Trigger, Variable, runner_\
 '''
         )
         self.writeLn('')
@@ -138,15 +137,13 @@ miajs = require('@botworx/miajs')
         for k in yy._terms:
             v = yy._terms[k];
             if v.type:
-                self.writeLn(f"_{k} = $_({k})({v.type.name})")
+                self.writeLn(f"_{k} = term_({k})({v.type.name})")
             else:
-                self.writeLn(f"_{k} = $_({k})")
+                self.writeLn(f"_{k} = term_({k})")
 
-        self.writeLn("module.exports = function() {")
-        self.indent()
+        self.writeLn()
         self.Block(n)
-        self.dedent()
-        self.writeLn("}")
+
         if not self.options['filename']: #were running in a sandbox
             self.writeLn("runner_().run(module.exports)")
         else:
@@ -156,11 +153,11 @@ miajs = require('@botworx/miajs')
         self.writeLn(f"require({n.expr.value}).action.call(self)")
 
     def Def(self, n):
-        self.writeLn(f"self.def({self.visit(n.trigger)}, function*()")
+        self.writeLn(f"@rule({self.visit(n.trigger)})")
+        self.writeLn(f"def {n.trigger.verb.name}():")
         self.indent()
         self.visit(n.body)
         self.dedent()
-        self.writeLn('});')
 
     def Sig(self, n):
         self.writeLn(f"self.sig({self.visit(n.trigger)}, function*()")
@@ -177,8 +174,8 @@ miajs = require('@botworx/miajs')
             'Variable': Variable
         })
         return ''.join([
-            'new Trigger(',
-            ''.join([
+            'Trigger(',
+            ', '.join([
                 self.visit(node.flavor),
                 self.visit(node.type),
                 self.visit(node.subj) or '__',
@@ -197,13 +194,13 @@ miajs = require('@botworx/miajs')
             arr = [n.arg]
         for c in arr:
             t = n.type
-            if t == _Assert:
+            if t == yy._Assert:
                 self.writeLn(f"self.assert({self.visit(c)})")
-            elif t == _Retract:
+            elif t == yy._Retract:
                 self.writeLn(f"self.retract({self.visit(c)})")
-            elif t == _Attempt:
+            elif t == yy._Attempt:
                 self.visitAttempt(n)
-            elif t == _Propose:
+            elif t == yy._Propose:
                 self.writeLn(f"self.propose({self.visit(c)})")
 
     def Attempt(self, n):
@@ -221,10 +218,9 @@ miajs = require('@botworx/miajs')
 
     def Clause(self, n):
         return ''.join([
-            'new ',
             self.visit(n.type),
             '(',
-            ''.join(filter(lambda x: x or None, [
+            ', '.join(filter(lambda x: x or None, [
                 self.visit(n.subj),
                 self.visit(n.verb),
                 self.visit(n.obj),

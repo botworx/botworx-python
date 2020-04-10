@@ -524,6 +524,11 @@ class Parser(sly.Parser):
         {$$ = ($1.length == 1 ? $1[0] : new yy.Array($1));}
     ;
     '''
+    @_('Expression')
+    def ObjExpr(self, p):
+        #return p.CommaList if len(p.CommaList) < 1 else yy.Array(p.CommaList)
+        return p.Expression
+
     @_('CommaList')
     def ObjExpr(self, p):
         #return p.CommaList if len(p.CommaList) < 1 else yy.Array(p.CommaList)
