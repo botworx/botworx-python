@@ -8,6 +8,7 @@ from botworx.run import *
 from botworx.run import _I
 from botworx.run.agent import Agent
 
+_jump = term_('jump')
 _say = term_('say')
 _x_ = var_('x')
 
@@ -15,14 +16,25 @@ class MyAgent(Agent):
     def __init__(self):
         super().__init__()
         print(self.__class__.rules)
-        self.post(attempt_(Achieve, _I, _say, 'jump!'))
+
+    async def main(self):
+        await self.post(attempt_(Achieve, _I, _jump))
+
+    @_(OnAttempt(Achieve, _I, _jump))
+    async def howhigh(self, msg):
+        print('How high?')
+        print(msg)
 
     @_(OnAttempt(Achieve, _I, _say, _x_))
-    async def howdy(self):
+    async def howdy(self, msg):
         print('Howdy Folks!')
+        print(msg)
+
+    @_(OnAttempt(Achieve, _I, _say, _x_))
+    async def howfar(self, msg):
+        print('How Far?')
+        print(msg)
 
 agent = MyAgent()
-result = agent.run()
-print(result)
-#loop = asyncio.get_event_loop()
-#loop.run_until_complete(task)
+
+agent.run()

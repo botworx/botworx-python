@@ -1,11 +1,21 @@
-#! /usr/bin/env python
+import inspect
+from contextlib import *
 
-#import sys
-#import os
+class Test(AbstractContextManager):
+    def __init__(self):
+        self.coro = None
+    def __enter__(self):
+        return self
+    def __exit__(self, type, value, traceback):
+        print(type)
+        pass
 
-#from botworx.test.test_lexer import Test
-#from botworx.test.test_parser import Test
-import tests.test_compiler as tc
+def main():
+    with Test() as t:
+        def fn():
+            print('fn')
+        t.coro = fn
+        v = inspect.getmembers(t)
+        print(v)
 
-test = tc.Test()
-test.test()
+main()

@@ -181,28 +181,28 @@ class Propose(Message):
     pass
 
 
-propose_ = lambda T, s, v, o, x=None: Propose(T(s, v, o, x))
+propose_ = lambda T, s, v, o=None, x=None: Propose(T(s, v, o, x))
 
 
 class Attempt(Message):
     pass
 
 
-attempt_ = lambda T, s, v, o, x=None: Attempt(T(s, v, o, x))
+attempt_ = lambda T, s, v, o=None, x=None: Attempt(T(s, v, o, x))
 
 
 class Assert(Message):
     pass
 
 
-assert_ = lambda T, s, v, o, x=None: Assert(T(s, v, o, x))
+assert_ = lambda T, s, v, o=None, x=None: Assert(T(s, v, o, x))
 
 
 class Retract(Message):
     pass
 
 
-retract_ = lambda T, s, v, o, x: Retract(T(s, v, o, x))
+retract_ = lambda T, s, v, o=None, x=None: Retract(T(s, v, o, x))
 #
 # Trigger
 #
@@ -223,22 +223,22 @@ class Trigger:
 
 #
 class OnAssert(Trigger):
-    def __init__(self, T, s, v, o, x):
+    def __init__(self, T, s, v, o=None, x=None):
         super().__init__(Assert, T, s, v, o, x)
 
 
-onAssert_ = lambda T, s, v, o, x: OnAssert(T, s, v, o, x)
+onAssert_ = lambda T, s, v, o=None, x=None: OnAssert(T, s, v, o, x)
 #
 class OnRetract(Trigger):
     pass
 
 
-onRetract_ = lambda T, s, v, o, x: OnRetract(T, s, v, o, x)
+onRetract_ = lambda T, s, v, o=None, x=None: OnRetract(T, s, v, o, x)
 
 
 class OnAttempt(Trigger):
-    def __init__(self, T, s, v, o, x=None):
+    def __init__(self, T, s, v, o=None, x=None):
         super().__init__(Attempt, T, s, v, o, x)
 
 
-onAttempt_ = lambda T, s, v, o, x: OnAttempt(T, s, v, o, x)
+onAttempt_ = lambda T, s, v, o=None, x=None: OnAttempt(T, s, v, o, x)

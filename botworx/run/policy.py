@@ -1,6 +1,5 @@
 import inspect
 from copy import copy
-from botworx.run.task import Method
 from botworx.run.policymeta import PolicyMeta
 
 #
@@ -88,8 +87,8 @@ class Policy(metaclass=PolicyMeta):
 
         # Collect all of the rule functions from the class definition
         functions = cls.__collect_functions(definitions)
-        print('functions')
-        print(functions)
+        #print('functions')
+        #print(functions)
 
         cls.rules = cls.__build_rules(functions)
 
