@@ -1,8 +1,9 @@
 import unittest
 
 from botworx.run import *
-from botworx.run.task import Rule
+from botworx.run.policy import Rule
 from botworx.run.agent import Agent
+
 _Bob = term_("Bob")
 _likes = term_("likes")
 _Fish = term_("Fish")
@@ -11,7 +12,8 @@ _Joe = term_("Joe")
 _likes = term_("likes")
 _Turtles = term_("Turtles")
 
-_x = variable_('x')
+_x = var_("x")
+
 
 class Test(unittest.TestCase):
     def test(self):
@@ -30,7 +32,7 @@ class Test(unittest.TestCase):
         print(t.match(m))
 
         async def action():
-            print('Pow!')
+            print("Pow!")
 
         r = Rule(t, action)
 
@@ -39,5 +41,6 @@ class Test(unittest.TestCase):
         agent = Agent()
         agent.run()
 
-if __name__ == '__main__':
+
+if __name__ == "__main__":
     unittest.main()

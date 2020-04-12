@@ -2,23 +2,25 @@ import unittest
 
 from botworx.run.policy import Policy
 
-class TestPolicy(Policy):
 
-    @_('+ $x likes Turtles')
+class MyPolicy(Policy):
+    @_("+ $x likes Turtles")
     def blah():
-        print('blah')
+        print("blah")
 
-    @_('+ $x likes Turtle Soup')
+    @_("+ $x likes Turtle Soup")
     def blah():
-        print('blah')
+        print("blah")
 
-policy = TestPolicy()
 
-print(vars(policy.__class__))
+
 
 class Test(unittest.TestCase):
     def test(self):
-        pass
+        policy = MyPolicy()
 
-if __name__ == '__main__':
+        print(vars(policy.__class__))
+
+
+if __name__ == "__main__":
     unittest.main()

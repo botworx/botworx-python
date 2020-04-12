@@ -20,9 +20,10 @@ TS_HALTED = "Halted"
 #
 # Context Management
 #
-PARENT = 'parent'
+PARENT = "parent"
 
 ctx_parent = contextvars.ContextVar("ctx_parent", default=None)
+
 
 def ctx_enter(parent, child):
     if not parent:
@@ -32,10 +33,12 @@ def ctx_enter(parent, child):
         parent.add(child)
 
     ctx_parent.set(child)
-    return { PARENT: parent }
+    return {PARENT: parent}
+
 
 def ctx_exit(ctx):
     ctx_parent.set(ctx[PARENT])
+
 
 # class Behavior(metaclass=BehaviorMeta):
 class Behavior(Policy):
@@ -120,7 +123,7 @@ class Behavior(Policy):
         return self.status
 
     async def fail(self):
-        print('fail')
+        print("fail")
         self.status = TS_FAILURE
         if self.parent:
             return await self.parent.strategy(self)
@@ -226,6 +229,7 @@ def action(parent=None):
     yield child
     ctx_exit(ctx)
 
+
 action_ = lambda action: Action(action)
 
 
@@ -250,6 +254,7 @@ def sequence(parent=None):
     yield child
     ctx_exit(ctx)
 
+
 #
 # Loop
 #
@@ -268,6 +273,7 @@ class Timer(Behavior):
                     except Failure:
                         return
 
+
 @contextmanager
 def timer(timeout, parent=None):
     child = Timer(timeout)
@@ -275,12 +281,14 @@ def timer(timeout, parent=None):
     yield child
     ctx_exit(ctx)
 
+
 #
 # Loop
 #
 class Loop(Behavior):
     def __init__(self):
         super().__init__()
+
     async def main(self):
         while True:
             for child in self.children:
@@ -289,6 +297,7 @@ class Loop(Behavior):
                         tasks.start_soon(child.main)
                 except Failure:
                     return
+
 
 @contextmanager
 def loop(parent=None):
@@ -317,6 +326,8 @@ class Counter(Behavior):
                         tasks.start_soon(child.main, child)
                 except Failure:
                     return
+
+
 @contextmanager
 def counter(start, stop, parent=None):
     child = Counter(start, stop)

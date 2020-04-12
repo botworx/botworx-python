@@ -10,7 +10,7 @@ _Joe = term_("Joe")
 _likes = term_("likes")
 _Turtles = term_("Turtles")
 
-_x = variable_('x')
+_x = var_('x')
 
 class Test(unittest.TestCase):
     def test(self):

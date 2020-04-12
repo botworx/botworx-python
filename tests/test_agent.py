@@ -1,5 +1,4 @@
-import asyncio
-import types
+import unittest
 
 from botworx.application import create_app
 app = create_app()
@@ -35,6 +34,10 @@ class MyAgent(Agent):
         print('How Far?')
         print(msg)
 
-agent = MyAgent()
+class Test(unittest.TestCase):
+    def test(self):
+        agent = MyAgent()
+        agent.run()
 
-agent.run()
+if __name__ == '__main__':
+    unittest.main()

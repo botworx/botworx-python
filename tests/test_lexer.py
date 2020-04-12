@@ -1,22 +1,7 @@
-"""
-"""
-# import sys
-# import os
 import unittest
 
 from botworx.data import load
 from botworx.compile.lex.lexer import Lexer
-
-data = """
-class HelloWorld
-
-  def constructor()
-    say 'Hello World'
-    
-  def say(say $t)
-    | print t
-"""
-
 
 class Test(unittest.TestCase):
     def test(self):
