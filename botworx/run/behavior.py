@@ -1,3 +1,4 @@
+import contextvars
 from contextlib import contextmanager
 from uuid import uuid1
 from copy import copy
@@ -15,6 +16,26 @@ TS_SUCCESS = "Success"
 TS_FAILURE = "Failure"
 TS_SUSPENDED = "Suspended"
 TS_HALTED = "Halted"
+
+#
+# Context Management
+#
+PARENT = 'parent'
+
+ctx_parent = contextvars.ContextVar("ctx_parent", default=None)
+
+def ctx_enter(parent, child):
+    if not parent:
+        parent = ctx_parent.get()
+    if parent:
+        child.parent = parent
+        parent.add(child)
+
+    ctx_parent.set(child)
+    return { PARENT: parent }
+
+def ctx_exit(ctx):
+    ctx_parent.set(ctx[PARENT])
 
 # class Behavior(metaclass=BehaviorMeta):
 class Behavior(Policy):
@@ -183,11 +204,10 @@ class Condition(Behavior):
 
 @contextmanager
 def condition(parent=None):
-    b = Condition()
-    if parent:
-        b.parent = parent
-        parent.add(b)
-    yield b
+    child = Condition()
+    ctx = ctx_enter(parent, child)
+    yield child
+    ctx_exit(ctx)
 
 
 condition_ = lambda: Condition()
@@ -201,12 +221,10 @@ class Action(Behavior):
 
 @contextmanager
 def action(parent=None):
-    b = Action()
-    if parent:
-        b.parent = parent
-        parent.add(b)
-    yield b
-
+    child = Action()
+    ctx = ctx_enter(parent, child)
+    yield child
+    ctx_exit(ctx)
 
 action_ = lambda action: Action(action)
 
@@ -227,11 +245,35 @@ class Sequence(Behavior):
 
 @contextmanager
 def sequence(parent=None):
-    b = Sequence()
-    yield b
-    if parent:
-        parent.add(b)
+    child = Sequence()
+    ctx = ctx_enter(parent, child)
+    yield child
+    ctx_exit(ctx)
 
+#
+# Loop
+#
+class Timer(Behavior):
+    def __init__(self, timeout):
+        super().__init__()
+        self.timeout = timeout
+
+    async def main(self):
+        with trio.move_on_after(self.timeout):
+            while True:
+                for child in self.children:
+                    try:
+                        async with trio.open_nursery() as tasks:
+                            tasks.start_soon(child.main)
+                    except Failure:
+                        return
+
+@contextmanager
+def timer(timeout, parent=None):
+    child = Timer(timeout)
+    ctx = ctx_enter(parent, child)
+    yield child
+    ctx_exit(ctx)
 
 #
 # Loop
@@ -239,28 +281,21 @@ def sequence(parent=None):
 class Loop(Behavior):
     def __init__(self):
         super().__init__()
-
     async def main(self):
         while True:
-            '''
             for child in self.children:
-                result = await child.main()
-                print('result', result)
-                if result == TS_FAILURE:
-                    return await self.fail()
-            '''
-            async with trio.open_nursery() as tasks:
-                self.tasks = tasks
-                for child in self.children:
-                    tasks.start_soon(child.main)
+                try:
+                    async with trio.open_nursery() as tasks:
+                        tasks.start_soon(child.main)
+                except Failure:
+                    return
 
 @contextmanager
 def loop(parent=None):
-    b = Loop()
-    yield b
-    if parent:
-        b.parent = parent
-        parent.add(b)
+    child = Loop()
+    ctx = ctx_enter(parent, child)
+    yield child
+    ctx_exit(ctx)
 
 
 #
@@ -272,15 +307,7 @@ class Counter(Behavior):
         self.start = start
         self.stop = stop
         self.count = 0
-    '''
-    async def main(self):
-        for i in range(self.start, self.stop):
-            self.count = i
-            for child in self.children:
-                result = await child.main(child)
-                if result == TS_FAILURE:
-                    return await self.fail()
-    '''
+
     async def main(self):
         for i in range(self.start, self.stop):
             self.count = i
@@ -292,10 +319,10 @@ class Counter(Behavior):
                     return
 @contextmanager
 def counter(start, stop, parent=None):
-    b = Counter(start, stop)
-    yield b
-    if parent:
-        parent.add(b)
+    child = Counter(start, stop)
+    ctx = ctx_enter(parent, child)
+    yield child
+    ctx_exit(ctx)
 
 
 #
@@ -315,10 +342,10 @@ class Parallel(Behavior):
 
 @contextmanager
 def parallel(parent=None):
-    b = Parallel()
-    yield b
-    if parent:
-        parent.add(b)
+    child = Parallel()
+    ctx = ctx_enter(parent, child)
+    yield child
+    ctx_exit(ctx)
 
 
 #
