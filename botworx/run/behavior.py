@@ -2,21 +2,11 @@ from contextlib import contextmanager
 from uuid import uuid1
 from copy import copy
 import inspect
-import curio
+import trio
 
 # from botworx.run.taskmeta import BehaviorMeta
 # from botworx.run.policy import Policy
-from botworx.run import (
-    term_,
-    Term,
-    Message,
-    Propose,
-    Attempt,
-    Assert,
-    Retract,
-    Achieve,
-)
-
+from botworx.run import *
 from botworx.run.policy import Policy
 
 TS_INITIAL = "Initial"
@@ -37,13 +27,22 @@ class Behavior(Policy):
         self.result = None
         self.status = TS_INITIAL
         self.policy = self
-        self.tasks = curio.TaskGroup()
+        self.tasks = None
+
+    def add(self, child):
+        child.parent = self
+        child.tasks = self.tasks
+        self.children.append(child)
+        return self
+
+    def remove(self, child):
+        index = self.children.indexOf(child)
+        if index > -1:
+            self.children.splice(index, 1)
+        return self
 
     def use(self, fn):
         self.main = fn
-
-    def toJSON(self):
-        return {TYPE: self.__class__.__name, MSG: self.msg}
 
     def define(self, trigger, action):
         return self.addRule(Rule(trigger, action))
@@ -73,31 +72,19 @@ class Behavior(Policy):
             return self.policy.match(m)
         return []
 
-    def add(self, child):
-        child.parent = self
-        self.children.append(child)
-        return self
-
-    def remove(self, child):
-        index = self.children.indexOf(child)
-        if index > -1:
-            self.children.splice(index, 1)
-        return self
-
     #
     # EXECUTION
     #
-    def run(self, debug=None):
-        curio.run(self.main(), debug=debug)
+    async def strategy(self, child):
+        status = child.status
+        if status == TS_FAILURE:
+            raise Failure()
+            return status
+        elif status == TS_SUCCESS:
+            return status
 
-    # DSL
-    def chain(self, b):
-        a = self.children[self.children.length - 1]
-        if a:
-            a.dst = b
-            b.src = a
-        self.add(b)
-        return self
+    def run(self, debug=None):
+        trio.run(self.main)
 
     def suspend(self):
         self.status = TS_SUSPENDED
@@ -111,17 +98,13 @@ class Behavior(Policy):
         self.status = TS_SUCCESS
         return self.status
 
-    def fail(self):
-        self.status = TS_FAILURE
-        return self.status
-
-    """
     async def fail(self):
+        print('fail')
         self.status = TS_FAILURE
-        task = await curio.current_task()
-        task.cancel()
-        return self.status
-    """
+        if self.parent:
+            return await self.parent.strategy(self)
+        else:
+            return self.status
 
     def halt(self):
         if self.rnr:
@@ -173,6 +156,23 @@ class Behavior(Policy):
     def retract(self, c):
         return self.post(Retract(c, self))
 
+    #
+    # Utility
+    #
+    def toJSON(self):
+        return {TYPE: self.__class__.__name, MSG: self.msg}
+
+    #
+    # DSL
+    #
+    def chain(self, b):
+        a = self.children[self.children.length - 1]
+        if a:
+            a.dst = b
+            b.src = a
+        self.add(b)
+        return self
+
 
 #
 # Condition
@@ -220,10 +220,9 @@ class Sequence(Behavior):
 
     async def main(self):
         for child in self.children:
-            task = await curio.spawn(child.main)
-            result = await task.join()
+            result = await child.main()
             if result == TS_FAILURE:
-                return self.fail()
+                return await self.fail()
 
 
 @contextmanager
@@ -243,12 +242,17 @@ class Loop(Behavior):
 
     async def main(self):
         while True:
+            '''
             for child in self.children:
-                task = await curio.spawn(child.main)
-                result = await task.join()
+                result = await child.main()
+                print('result', result)
                 if result == TS_FAILURE:
-                    return self.fail()
-
+                    return await self.fail()
+            '''
+            async with trio.open_nursery() as tasks:
+                self.tasks = tasks
+                for child in self.children:
+                    tasks.start_soon(child.main)
 
 @contextmanager
 def loop(parent=None):
@@ -268,17 +272,24 @@ class Counter(Behavior):
         self.start = start
         self.stop = stop
         self.count = 0
-
+    '''
     async def main(self):
         for i in range(self.start, self.stop):
             self.count = i
             for child in self.children:
-                task = await curio.spawn(child.main(child))
-                result = await task.join()
+                result = await child.main(child)
                 if result == TS_FAILURE:
-                    return self.fail()
-
-
+                    return await self.fail()
+    '''
+    async def main(self):
+        for i in range(self.start, self.stop):
+            self.count = i
+            for child in self.children:
+                try:
+                    async with trio.open_nursery() as tasks:
+                        tasks.start_soon(child.main, child)
+                except Failure:
+                    return
 @contextmanager
 def counter(start, stop, parent=None):
     b = Counter(start, stop)
@@ -295,9 +306,10 @@ class Parallel(Behavior):
         super().__init__()
 
     async def main(self):
-        for child in self.children:
-            await self.tasks.spawn(child.main)
-        await self.tasks.join()
+        async with trio.open_nursery() as tasks:
+            self.tasks = tasks
+            for child in self.children:
+                tasks.start_soon(child.main)
         return self.suspend()
 
 

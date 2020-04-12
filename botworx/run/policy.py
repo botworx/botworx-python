@@ -51,10 +51,9 @@ class Policy(metaclass=PolicyMeta):
 
     def match(self, msg):
         for r in self.rules:
-            print('rule match')
-            print(r)
             m = r.match(msg)
             if m:
+                print('rule match', r, m)
                 yield m
 
         policy = self.parent

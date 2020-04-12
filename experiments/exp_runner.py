@@ -44,16 +44,8 @@ class PostSubscriber(Subscriber):
         if msg.id != self.id:
             return
         await self.queue.put(msg)
-'''
-class Task(asyncio.tasks.Task):
-    def __init__(self):
-        super().__init__(self.main())
-        self.queue = asyncio.Queue()
 
-    async def main(self):
-        print('hello')
-'''
-class Runner(Task):
+class Runner:
     def run(self, task):
         #asyncio.run(coro, *, debug=False)
         #asyncio.run(self.main, debug=True)

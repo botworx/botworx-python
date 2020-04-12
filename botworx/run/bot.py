@@ -1,10 +1,11 @@
 from contextlib import asynccontextmanager
-import curio
+import trio
 from asyncio import Future
 
 from botworx.g import logger
 from botworx.run import *
 from botworx.run.behavior import Behavior
+
 
 class Bot(Behavior):
     def __init__(self):
@@ -14,20 +15,13 @@ class Bot(Behavior):
 
     async def main(self):
         print("I'm a Bot")
-        for child in self.children:
-            await self.tasks.spawn(child.main())
-        await self.tasks.join()
-    '''
-    async def process_posts(self):
-        for post in self.posts:
-            print('process')
-            future = post.future
-            future.set_result('Bob')
-        print('later')
+        async with trio.open_nursery() as tasks:
+            self.tasks = tasks
+            for child in self.children:
+                tasks.start_soon(child.main())
 
-    '''
     async def process_posts(self):
-        print('process')
+        print("process")
         for post in self.posts:
             await self.dispatch(post)
 
@@ -54,20 +48,18 @@ class Bot(Behavior):
 
     async def fire(self, msg):
         for m in self.policy.match(msg):
-            print('fire', m)
+            print("fire", m)
             logger.debug(f"Fire:\t{m}:")
-            task = await curio.spawn(m.rule.action(self, m))
-            await task.join()
+            await m.rule.action(self, m)
 
     async def post(self, msg):
         self.posts.append(msg)
-        await curio.spawn(self.process_posts())
+        await self.process_posts()
 
     async def call(self, msg):
         future = Future()
         msg.future = future
         self.posts.append(msg)
-        posts = await curio.spawn(self.process_posts())
-        await posts.join()
+        await self.process_posts()
         result = await future
         return result

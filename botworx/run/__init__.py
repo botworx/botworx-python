@@ -1,6 +1,9 @@
 from typing import Pattern
 import json
 
+class Failure(Exception):
+    pass
+
 __ = None
 
 

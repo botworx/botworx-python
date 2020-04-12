@@ -1,6 +1,3 @@
-import asyncio
-import curio
-
 from botworx.g import logger
 from botworx.run import *
 from botworx.run.bot import Bot

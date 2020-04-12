@@ -4,9 +4,10 @@ with loop() as top:
     with counter(1, 11, top) as p:
         with condition(p) as c:
             async def fn(b):
-                if p.count > 5:
-                    print('fail')
-                    return b.fail()
+                if p.count > 4:
+                    await b.fail()
+                print('good')
+
             c.use(fn)
         with action(p) as a:
             async def fn(b):
